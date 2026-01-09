@@ -1,0 +1,62 @@
+Fix all issues related to large PDF uploads in the LpKards app.
+
+CURRENT PROBLEM
+- PDF upload fails with "file too large"
+- Large PDFs may crash or hang the app
+- PDF text extraction is not robust for big files
+
+GOAL
+Allow users to upload and process VERY LARGE PDFs safely and completely.
+
+REQUIREMENTS (MANDATORY)
+
+1. UPLOAD SIZE CONFIGURATION
+- Configure Flask to allow large uploads (at least 100 MB)
+- Explicitly set MAX_CONTENT_LENGTH
+- Do NOT hard-block files by size unless absolutely necessary
+- If the limit is exceeded, show a clear, user-friendly message
+
+2. MEMORY-SAFE PDF PROCESSING
+- Refactor PDF text extraction to process files page-by-page
+- Do NOT load the entire PDF into memory at once
+- Use streaming / incremental reading
+- Ensure file handles are properly closed after processing
+
+3. INTELLIGENT TEXT CHUNKING
+- After extracting text, split content into logical chunks
+- Chunk size should be based on content (≈ 2,000–3,000 words per chunk)
+- Preserve paragraphs and section boundaries when possible
+- Do NOT impose any global character limit
+- Ensure 100% of the document is processed (no truncation)
+
+4. SEQUENTIAL FLASHCARD GENERATION
+- Process chunks sequentially through the flashcard generator
+- Merge all generated flashcards into a single output
+- Ensure chunking does NOT reduce flashcard quality
+
+5. ROBUST ERROR HANDLING
+- Gracefully handle:
+  • Corrupted PDFs
+  • PDFs with no extractable text
+  • Encoding issues
+- Display clear, actionable error messages to the user
+- Never fail silently or crash the app
+
+6. USER EXPERIENCE
+- Display a non-blocking status message:
+  "Processing large document, this may take a moment..."
+- Ensure the UI remains responsive
+
+CONSTRAINTS
+- Do NOT change flashcard logic or formats
+- Do NOT modify UI layout or styling
+- Do NOT introduce alternative input methods
+- Do NOT reduce output quality
+
+SCOPE
+- Upload configuration
+- PDF extraction logic
+- Internal processing pipeline only
+
+FINAL CHECK
+- The LpKards app must successfully process very large PDFs end-to-end without errors.
