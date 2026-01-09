@@ -108,7 +108,7 @@ export default function Generator() {
       .join("\n");
       
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, `mediflash-export-${new Date().toISOString().slice(0, 10)}.txt`);
+    saveAs(blob, `lpkards-export-${new Date().toISOString().slice(0, 10)}.txt`);
     
     toast({
       title: "Export Complete",

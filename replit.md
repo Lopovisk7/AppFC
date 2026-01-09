@@ -1,8 +1,8 @@
-# MediFlash.ai
+# LpKards
 
 ## Overview
 
-MediFlash.ai is a medical education flashcard generator that uses AI to create Anki-style cloze deletion flashcards from medical text. Users paste medical content, select a study mode (conceptual, clinical, or board prep), difficulty level (basic, intern, resident), and desired quantity. The app generates flashcards using OpenAI's GPT model, displays them in an interactive flip-card grid, and allows export for Anki import.
+LpKards is a medical education flashcard generator that uses AI to create Anki-style cloze deletion flashcards from medical text. Users paste medical content, select a study mode (conceptual, clinical, or board prep), difficulty level (basic, intern, resident), and desired quantity. The app generates flashcards using OpenAI's GPT model, displays them in an interactive flip-card grid, and allows export for Anki import.
 
 ## User Preferences
 

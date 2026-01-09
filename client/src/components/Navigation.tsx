@@ -20,7 +20,7 @@ export function Navigation() {
                 <BrainCircuit className="w-6 h-6 text-primary" />
               </div>
               <span className="font-display font-bold text-xl tracking-tight text-foreground">
-                MediFlash<span className="text-primary">.ai</span>
+                LpKards
               </span>
             </Link>
 
