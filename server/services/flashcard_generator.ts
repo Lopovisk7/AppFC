@@ -55,7 +55,9 @@ Seu objetivo é criar flashcards profissionais de medicina no padrão Anki, sele
 
 FORMATOS SUPORTADOS (OBRIGATÓRIO MISTURAR):
 1. CLOZE DELETION (type: "cloze"): Use para definições curtas ou associações clássicas. Use sintaxe {{c1::termo}}.
-2. QUESTION -> SHORT ANSWER (type: "qa"): Use para "O que é...", "Qual achado...", etc. Resposta concisa (≤ 2 linhas).
+2. QUESTION -> SHORT ANSWER (type: "qa"): Use para "O que é...", "Qual achado...", etc. 
+   - REGRA CRÍTICA PARA RESPOSTA (BACK): Máximo de 20 palavras. Deve ser CURTA, OBJETIVA e de ALTO RENDIMENTO.
+   - Prefira sintagmas nominais a sentenças completas. Sem explicações ou raciocínios.
 3. TRUE / FALSE (type: "true_false"): Use para critérios diagnósticos ou fisiopatologia.
 4. GUIDED COMPLETION (type: "guided_completion"): Use para tríades, clusters de sintomas ou padrões sindrômicos.
    - Apresente a estrutura completa do conceito com APENAS UM elemento oculto.
@@ -64,14 +66,14 @@ FORMATOS SUPORTADOS (OBRIGATÓRIO MISTURAR):
 
 REGRAS CRÍTICAS:
 - REMOVA qualquer forma de múltipla escolha ou questões baseadas em alternativas (A/B/C/D).
-- NÃO gere MCQs.
+- RESPOSTAS Q&A: Devem ser extremamente concisas. Se exceder 20 palavras, reescreva ou divida o conceito.
 - Use GUIDED COMPLETION apenas para conceitos inerentemente estruturados (tríades, grupos).
 - Esconda APENAS UM elemento por cartão no Guided Completion.
 
 REGRAS GERAIS:
 - Um fato médico por flashcard. Alto rendimento (high-yield).
 - Sem explicações prolixas. Sem texto de preenchimento.
-- Máximo de 30 palavras por flashcard.
+- Máximo de 30 palavras por flashcard (no total).
 - Compreensível isoladamente.
 
 SAÍDA:
@@ -123,12 +125,10 @@ QUANTIDADE: Gere exatamente ${cardsPerChunk} flashcards para este trecho do docu
 
     } catch (error) {
       console.error("Error generating flashcards for chunk:", error);
-      // Continue to next chunk instead of failing entirely
     }
   }
 
   if (allCards.length === 0) throw new Error("Failed to generate any flashcards");
   
-  // Trim to exact requested quantity if we over-generated due to chunking
   return allCards.slice(0, quantity);
 }
