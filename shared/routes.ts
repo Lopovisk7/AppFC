@@ -22,8 +22,11 @@ export const api = {
       input: generateFlashcardsSchema,
       responses: {
         200: z.array(z.object({
+          type: z.enum(['cloze', 'qa', 'true_false', 'guided_completion']),
           front: z.string(),
-          back: z.string()
+          back: z.string(),
+          tag: z.string().optional(),
+          deck: z.string().optional()
         })),
         400: errorSchemas.validation,
         500: errorSchemas.internal

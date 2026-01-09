@@ -1,6 +1,15 @@
 import { type GeneratedFlashcard } from "@/hooks/use-flashcards";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+
+interface Flashcard {
+  type: 'cloze' | 'qa' | 'true_false' | 'guided_completion';
+  front: string;
+  back: string;
+  tag?: string;
+  deck?: string;
+}
 
 interface FlashcardGridProps {
   cards: GeneratedFlashcard[];
@@ -27,6 +36,14 @@ function FlashcardItem({ card }: { card: GeneratedFlashcard }) {
     });
   };
 
+  const renderContent = (isBack: boolean) => {
+    const text = isBack ? card.back : card.front;
+    if (card.type === 'cloze' || card.type === 'guided_completion') {
+      return renderCloze(text, isBack);
+    }
+    return text;
+  };
+
   return (
     <div 
       className={cn("flashcard", isFlipped && "flipped")}
@@ -34,14 +51,24 @@ function FlashcardItem({ card }: { card: GeneratedFlashcard }) {
     >
       <div className="flashcard-inner">
         <div className="flashcard-front">
-          <p className="text-lg font-medium leading-relaxed">
-            {renderCloze(card.front, false)}
-          </p>
+          <div className="flex flex-col gap-2">
+            <Badge variant="outline" className="w-fit self-center mb-2 uppercase text-[10px] tracking-widest opacity-70">
+              {card.type.replace('_', ' ')}
+            </Badge>
+            <p className="text-lg font-medium leading-relaxed">
+              {renderContent(false)}
+            </p>
+          </div>
         </div>
         <div className="flashcard-back">
-          <p className="text-lg font-medium leading-relaxed">
-            {renderCloze(card.back, true)}
-          </p>
+          <div className="flex flex-col gap-2">
+            <Badge variant="secondary" className="w-fit self-center mb-2 uppercase text-[10px] tracking-widest">
+              Resposta
+            </Badge>
+            <p className="text-lg font-medium leading-relaxed">
+              {renderContent(true)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

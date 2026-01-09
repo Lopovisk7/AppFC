@@ -3,8 +3,11 @@ import { api, type GenerateFlashcardsRequest } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
 export type GeneratedFlashcard = {
+  type: 'cloze' | 'qa' | 'true_false' | 'guided_completion';
   front: string;
   back: string;
+  tag?: string;
+  deck?: string;
 };
 
 export function useGenerateFlashcards() {

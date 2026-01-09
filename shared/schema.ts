@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const flashcards = pgTable("flashcards", {
   id: serial("id").primaryKey(),
-  type: text("type").notNull().default('cloze'), // cloze, qa, true_false, multiple_choice
+  type: text("type").notNull().default('cloze'), // cloze, qa, true_false, guided_completion
   front: text("front").notNull(),
   back: text("back").notNull(),
   tag: text("tag").notNull().default('Medical'),
