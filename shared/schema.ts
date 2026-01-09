@@ -4,8 +4,11 @@ import { z } from "zod";
 
 export const flashcards = pgTable("flashcards", {
   id: serial("id").primaryKey(),
+  type: text("type").notNull().default('cloze'), // cloze, qa, true_false, multiple_choice
   front: text("front").notNull(),
   back: text("back").notNull(),
+  tag: text("tag").notNull().default('Medical'),
+  deck: text("deck").notNull().default('Default'),
   mode: text("mode").notNull(), // conceptual, clinical, board
   level: text("level").notNull(), // basic, intern, resident
   createdAt: timestamp("created_at").defaultNow(),

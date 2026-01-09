@@ -1,0 +1,97 @@
+efactor ONLY the flashcard generation logic.
+
+CURRENT ISSUE
+
+- All flashcards are cloze-style “complete the sentence”
+- This causes monotony and is not optimal for all types of medical knowledge
+
+GOAL
+Enable the system to intelligently generate and MIX different types of flashcards, choosing the most appropriate format for each piece of information.
+
+SUPPORTED FLASHCARD TYPES (MANDATORY)
+
+1. CLOZE DELETION
+    - Use ONLY when the information is:
+    • A short, factual statement
+    • A definition
+    • A classic association
+    - Must follow strict cloze rules already implemented
+2. QUESTION → SHORT ANSWER
+    - Use when the knowledge tests:
+    • “What is…”
+    • “Which finding…”
+    • “What is the main characteristic…”
+    - Answer must be concise (≤ 2 lines)
+    
+    Example:
+    Q: What is the main hormonal abnormality in Cushing syndrome?
+    A: Excess cortisol production.
+    
+3. TRUE / FALSE
+    - Use when testing:
+    • Diagnostic criteria
+    • Pathophysiology
+    • Common misconceptions
+    - Statement must be clear and unambiguous
+    
+    Example:
+    Statement: Cushing syndrome is characterized by bradycardia.
+    Answer: False.
+    
+4. MULTIPLE COMPLETION / OPTIONS
+    - Use when the concept involves:
+    • Clinical syndromes
+    • Groups of symptoms
+    • Classic triads or clusters
+    - Present one correct option and distractors
+    
+    Example:
+    Prompt:
+    Cushing syndrome is characterized by:
+    A) Bradycardia
+    
+    B) Hypotension
+    
+    C) Hypercortisolism
+    
+    D) Hypoglycemia
+    
+    Correct answer: C
+    
+
+INTELLIGENT SELECTION RULES (CRITICAL)
+
+- The system must decide which flashcard type best fits EACH concept
+- Do NOT generate all cards in the same format
+- Avoid overusing cloze deletions
+- Prioritize:
+• Recall strength
+• Exam-style reasoning
+• Cognitive variety
+
+GLOBAL RULES
+
+- One medical fact per flashcard
+- High-yield only
+- No verbose explanations
+- No filler text
+- Cards must be understandable in isolation
+- Prefer exam-oriented phrasing when applicable
+
+OUTPUT STRUCTURE
+Each flashcard must include:
+
+- type: cloze | qa | true_false | multiple_choice
+- front: question / statement / prompt
+- back: answer / explanation (short)
+- tag: medical specialty
+- deck: deck name
+
+DO NOT change:
+
+- UI
+- Export logic
+- File structure
+- Styling
+
+ONLY modify the flashcard generation logic.

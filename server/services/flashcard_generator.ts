@@ -7,8 +7,11 @@ const openai = new OpenAI({
 });
 
 interface Flashcard {
+  type: 'cloze' | 'qa' | 'true_false' | 'multiple_choice';
   front: string;
   back: string;
+  tag: string;
+  deck: string;
 }
 
 export async function generateFlashcards(
@@ -18,20 +21,33 @@ export async function generateFlashcards(
   quantity: number
 ): Promise<Flashcard[]> {
   const systemPrompt = `Você é um desenvolvedor sênior full-stack e educador médico experiente.
-Seu objetivo é criar flashcards profissionais de medicina no padrão Anki usando exclusivamente o formato CLOZE-DELETION.
+Seu objetivo é criar flashcards profissionais de medicina no padrão Anki, selecionando inteligentemente o formato que melhor se adapta a cada conceito.
 
-REGRAS DE FORMATO:
-- Gere APENAS flashcards de omissão de palavras (cloze deletion) usando a sintaxe {{c1::termo}}.
-- Cada flashcard deve ser uma única sentença ou fato médico de alto rendimento.
-- Responda com um array JSON de objetos: {"front": "sentença com cloze", "back": "sentença completa com o termo revelado"}.
+FORMATOS SUPORTADOS (OBRIGATÓRIO MISTURAR):
+1. CLOZE DELETION (type: "cloze"): Use para definições curtas ou associações clássicas. Use sintaxe {{c1::termo}}.
+2. QUESTION -> SHORT ANSWER (type: "qa"): Use para "O que é...", "Qual achado...", etc. Resposta concisa (≤ 2 linhas).
+3. TRUE / FALSE (type: "true_false"): Use para critérios diagnósticos ou fisiopatologia.
+4. MULTIPLE CHOICE (type: "multiple_choice"): Use para síndromes, grupos de sintomas ou tríades. Forneça opções no front e a correta no back.
 
-REGRAS DE CONTEÚDO (MANDATÓRIAS):
+REGRAS DE SELEÇÃO INTELIGENTE:
+- Decida o tipo que melhor se adapta a CADA conceito.
+- NÃO gere todos os cartões no mesmo formato.
+- Evite o uso excessivo de cloze deletions.
+- Priorize força de retenção e raciocínio clínico.
+
+REGRAS GERAIS:
+- Um fato médico por flashcard. Alto rendimento (high-yield).
+- Sem explicações prolixas. Sem texto de preenchimento.
 - Máximo de 30 palavras por flashcard.
-- No máximo 2 omissões (clozes) por sentença.
-- Cada omissão deve esconder apenas UMA palavra-chave ou frase curta.
-- Foque em: Definições, Mecanismos, Indicações, Contraindicações, Achados de Imagem Clássicos, Critérios Diagnósticos.
-- Evite: Explicações longas, estatísticas não essenciais, curiosidades.
-- Cada flashcard deve ser compreensível isoladamente.
+- Compreensível isoladamente.
+
+SAÍDA:
+Responda APENAS com um objeto JSON contendo um array "flashcards", onde cada item tem:
+- type: cloze | qa | true_false | multiple_choice
+- front: pergunta / afirmação / prompt
+- back: resposta / explicação curta
+- tag: especialidade médica
+- deck: nome do baralho
 
 MODO: ${mode}
 NÍVEL: ${level}
@@ -59,10 +75,10 @@ QUANTIDADE: ${quantity} flashcards`;
     const parsed = JSON.parse(content);
     let cards: Flashcard[] = [];
     
-    if (Array.isArray(parsed)) {
-      cards = parsed;
-    } else if (parsed.flashcards && Array.isArray(parsed.flashcards)) {
+    if (parsed.flashcards && Array.isArray(parsed.flashcards)) {
       cards = parsed.flashcards;
+    } else if (Array.isArray(parsed)) {
+      cards = parsed;
     } else {
       const values = Object.values(parsed);
       for (const val of values) {

@@ -22,8 +22,11 @@ export async function registerRoutes(
   app.post(api.flashcards.generate.path, async (req, res) => {
     try {
       const { text, mode, level, quantity } = api.flashcards.generate.input.parse(req.body);
-      const flashcards = await generateFlashcards(text, mode, level, quantity);
-      res.json(flashcards);
+      const generatedCards = await generateFlashcards(text, mode, level, quantity);
+      
+      // Map generated cards to include mode and level for storage if needed, 
+      // although the generate endpoint usually just returns them to the frontend
+      res.json(generatedCards);
     } catch (error) {
       console.error("Generate error:", error);
       if (error instanceof z.ZodError) {
