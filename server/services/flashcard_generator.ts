@@ -18,26 +18,30 @@ export async function generateFlashcards(
   quantity: number
 ): Promise<Flashcard[]> {
   const systemPrompt = `Você é um desenvolvedor sênior full-stack e educador médico experiente.
-Seu objetivo é criar flashcards profissionais de medicina no padrão Anki.
+Seu objetivo é criar flashcards profissionais de medicina no padrão Anki usando exclusivamente o formato CLOZE-DELETION.
 
-DIRETRIZES:
-- As perguntas devem ser similares às cobradas em provas de residência médica.
-- Para flashcards clínicos, inclua a conduta/tratamento quando aplicável.
-- Evite textos longos e redundantes. Seja direto e objetivo.
-- Foque no que é clinicamente relevante.
+REGRAS DE FORMATO:
+- Gere APENAS flashcards de omissão de palavras (cloze deletion) usando a sintaxe {{c1::termo}}.
+- Cada flashcard deve ser uma única sentença ou fato médico de alto rendimento.
+- Responda com um array JSON de objetos: {"front": "sentença com cloze", "back": "sentença completa com o termo revelado"}.
+
+REGRAS DE CONTEÚDO (MANDATÓRIAS):
+- Máximo de 30 palavras por flashcard.
+- No máximo 2 omissões (clozes) por sentença.
+- Cada omissão deve esconder apenas UMA palavra-chave ou frase curta.
+- Foque em: Definições, Mecanismos, Indicações, Contraindicações, Achados de Imagem Clássicos, Critérios Diagnósticos.
+- Evite: Explicações longas, estatísticas não essenciais, curiosidades.
+- Cada flashcard deve ser compreensível isoladamente.
 
 MODO: ${mode}
 NÍVEL: ${level}
-QUANTIDADE: ${quantity} flashcards
+QUANTIDADE: ${quantity} flashcards`;
 
-Responda APENAS com um array JSON de objetos, onde cada objeto tem "front" (pergunta) e "back" (resposta).
-Exemplo: [{"front": "Pergunta...", "back": "Resposta..."}]`;
-
-  const userPrompt = `Texto base para estudo:\n${text}`;
+  const userPrompt = `Texto base para extração de fatos:\n${text}`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5.1", // Using the latest available model as per blueprint
+      model: "gpt-5.1",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -52,21 +56,25 @@ Exemplo: [{"front": "Pergunta...", "back": "Resposta..."}]`;
       throw new Error("No content generated");
     }
 
-    // Parse the response
     const parsed = JSON.parse(content);
-    // Handle different possible JSON structures (array or object with key)
+    let cards: Flashcard[] = [];
+    
     if (Array.isArray(parsed)) {
-      return parsed;
+      cards = parsed;
     } else if (parsed.flashcards && Array.isArray(parsed.flashcards)) {
-      return parsed.flashcards;
+      cards = parsed.flashcards;
     } else {
-      // Fallback: try to find an array in the object values
       const values = Object.values(parsed);
       for (const val of values) {
-        if (Array.isArray(val)) return val as Flashcard[];
+        if (Array.isArray(val)) {
+          cards = val as Flashcard[];
+          break;
+        }
       }
-      throw new Error("Could not parse flashcards from response");
     }
+
+    if (cards.length === 0) throw new Error("Could not parse flashcards");
+    return cards;
 
   } catch (error) {
     console.error("Error generating flashcards:", error);
