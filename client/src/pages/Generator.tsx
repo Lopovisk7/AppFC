@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useGenerateFlashcards, type GeneratedFlashcard } from "@/hooks/use-flashcards";
 import { FlashcardGrid } from "@/components/FlashcardGrid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Brain, FileDown, Copy, Loader2, Sparkles, BookOpen } from "lucide-react";
+import { Brain, FileDown, Copy, Loader2, Sparkles, BookOpen, FileUp, X } from "lucide-react";
 import { saveAs } from "file-saver";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function Generator() {
   const [text, setText] = useState("");
@@ -19,36 +21,83 @@ export default function Generator() {
   const [level, setLevel] = useState<"basic" | "intern" | "resident">("basic");
   const [quantity, setQuantity] = useState([10]);
   const [generatedCards, setGeneratedCards] = useState<GeneratedFlashcard[]>([]);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { mutate: generate, isPending } = useGenerateFlashcards();
   const { toast } = useToast();
 
+  const generateMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate flashcards");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setGeneratedCards(data);
+      toast({
+        title: "Success!",
+        description: `Generated ${data.length} flashcards successfully.`,
+      });
+      setTimeout(() => {
+        document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    },
+    onError: (error) => {
+      toast({
+        title: "Generation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleGenerate = () => {
-    if (!text.trim()) {
+    if (!text.trim() && !pdfFile) {
       toast({
         title: "Content missing",
-        description: "Please paste some medical text to generate flashcards.",
+        description: "Please paste text or upload a PDF to generate flashcards.",
         variant: "destructive",
       });
       return;
     }
 
-    generate(
-      { text, mode, level, quantity: quantity[0] },
-      {
-        onSuccess: (data) => {
-          setGeneratedCards(data);
-          toast({
-            title: "Success!",
-            description: `Generated ${data.length} flashcards successfully.`,
-          });
-          // Scroll to results
-          setTimeout(() => {
-            document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
-          }, 100);
-        },
-      }
-    );
+    const formData = new FormData();
+    formData.append("mode", mode);
+    formData.append("level", level);
+    formData.append("quantity", quantity[0].toString());
+    
+    if (pdfFile) {
+      formData.append("pdf", pdfFile);
+    } else {
+      formData.append("text", text);
+    }
+
+    generateMutation.mutate(formData);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setPdfFile(file);
+      setText(""); // Clear text if PDF is uploaded to avoid confusion
+    } else if (file) {
+      toast({
+        title: "Invalid file",
+        description: "Please upload a PDF file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeFile = () => {
+    setPdfFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleExportAnki = () => {
@@ -102,7 +151,7 @@ export default function Generator() {
               Master Medicine with <span className="text-blue-400">Smart Flashcards</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl">
-              Paste your notes, textbook chapters, or guidelines. We'll generate high-yield, 
+              Upload a PDF or paste your notes. We'll generate high-yield, 
               exam-ready flashcards tailored to your training level.
             </p>
           </motion.div>
@@ -115,23 +164,73 @@ export default function Generator() {
         <div className="lg:col-span-8 space-y-6">
           <Card className="border-2 border-border/50 shadow-xl shadow-slate-200/50">
             <CardContent className="p-6 md:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-primary/10 p-2 rounded-lg">
-                  <BookOpen className="w-5 h-5 text-primary" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Source Material</h2>
                 </div>
-                <h2 className="text-xl font-semibold">Source Material</h2>
+                
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(pdfFile && "bg-primary/5 border-primary/20")}
+                  >
+                    <FileUp className="w-4 h-4 mr-2" />
+                    {pdfFile ? "Change PDF" : "Upload PDF"}
+                  </Button>
+                </div>
               </div>
               
-              <Textarea
-                placeholder="Paste medical text here (e.g., UpToDate article, textbook chapter, lecture notes)..."
-                className="min-h-[400px] text-base leading-relaxed p-6 resize-none rounded-xl bg-slate-50/50 focus:bg-white transition-all border-slate-200 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 font-mono"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-              <div className="mt-4 flex justify-between text-sm text-muted-foreground">
-                <span>Supports up to 5000 characters</span>
-                <span>{text.length} chars</span>
-              </div>
+              <AnimatePresence mode="wait">
+                {pdfFile ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="min-h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-primary/20 rounded-xl bg-primary/5 p-8 text-center"
+                  >
+                    <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
+                      <FileUp className="w-12 h-12 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-1">{pdfFile.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB • PDF Document
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={removeFile} className="text-destructive hover:bg-destructive/10">
+                      <X className="w-4 h-4 mr-2" />
+                      Remove File
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <Textarea
+                      placeholder="Paste medical text here or upload a PDF above..."
+                      className="min-h-[400px] text-base leading-relaxed p-6 resize-none rounded-xl bg-slate-50/50 focus:bg-white transition-all border-slate-200 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 font-mono"
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                    />
+                    <div className="mt-4 flex justify-between text-sm text-muted-foreground">
+                      <span>Supports up to 5000 characters</span>
+                      <span>{text.length} chars</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
         </div>
@@ -203,12 +302,12 @@ export default function Generator() {
               <div className="pt-4">
                 <Button 
                   onClick={handleGenerate} 
-                  disabled={isPending || !text.trim()}
+                  disabled={generateMutation.isPending || (!text.trim() && !pdfFile)}
                   variant="gradient"
                   size="lg"
                   className="w-full text-lg font-semibold shadow-blue-500/20"
                 >
-                  {isPending ? (
+                  {generateMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Generating...
